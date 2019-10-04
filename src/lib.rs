@@ -444,6 +444,12 @@ pub trait SerialPort: Send + io::Read + io::Write {
     /// * `Io` for any other type of I/O error.
     fn clear(&self, buffer_to_clear: ClearBuffer) -> Result<()>;
 
+    /// Set the terminal hardware into BREAK condition.
+    fn set_break(&self) -> Result<()>;
+
+    /// Clear the terminal hardware BREAK condition.
+    fn clear_break(&self) -> Result<()>;
+
     // Misc methods
 
     /// Attempts to clone the `SerialPort`. This allow you to write and read simultaneously from the

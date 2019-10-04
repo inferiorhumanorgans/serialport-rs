@@ -9,11 +9,15 @@ use crate::Result;
 // These are wrapped in a module because they're `pub` by default
 mod raw {
     use nix::libc;
-    use nix::{ioctl_none_bad, ioctl_read, ioctl_read_bad, ioctl_write_ptr, ioctl_write_ptr_bad};
+    use nix::{ioctl_none, ioctl_none_bad, ioctl_read, ioctl_read_bad, ioctl_write_ptr, ioctl_write_ptr_bad};
 
     ioctl_none_bad!(tiocexcl, libc::TIOCEXCL);
     ioctl_none_bad!(tiocnxcl, libc::TIOCNXCL);
     ioctl_read_bad!(tiocmget, libc::TIOCMGET, libc::c_int);
+
+    // For setting/clearing breaks
+    ioctl_none!(tiocsbrk, b't', libc::TIOCSBRK);
+    ioctl_none!(tioccbrk, b't', libc::TIOCCBRK);
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
     ioctl_read_bad!(fionread, libc::FIONREAD, libc::c_int);
@@ -119,6 +123,18 @@ pub fn tiocmget(fd: RawFd) -> Result<SerialLines> {
     let mut status = unsafe { mem::uninitialized() };
     let x = unsafe { raw::tiocmget(fd, &mut status) };
     x.map(SerialLines::from_bits_truncate).map_err(|e| e.into())
+}
+
+pub fn tiocsbrk(fd: RawFd) -> Result<()> {
+    unsafe { raw::tiocsbrk(fd) }
+        .map(|_| ())
+        .map_err(|e| e.into())
+}
+
+pub fn tioccbrk(fd: RawFd) -> Result<()> {
+    unsafe { raw::tioccbrk(fd) }
+        .map(|_| ())
+        .map_err(|e| e.into())
 }
 
 pub fn fionread(fd: RawFd) -> Result<u32> {

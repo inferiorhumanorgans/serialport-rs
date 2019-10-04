@@ -901,6 +901,16 @@ impl SerialPort for TTYPort {
             .map_err(|e| e.into())
     }
 
+    fn set_break(&self) -> Result<()>
+    {
+        ioctl::tiocsbrk(self.fd)
+    }
+
+    fn clear_break(&self) -> Result<()>
+    {
+        ioctl::tioccbrk(self.fd)
+    }
+
     fn try_clone(&self) -> Result<Box<SerialPort>> {
         let fd_cloned: i32 = fcntl(self.fd, nix::fcntl::F_DUPFD(self.fd))?;
         Ok(Box::new(TTYPort {
