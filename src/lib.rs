@@ -464,7 +464,7 @@ pub trait SerialPort: Send + io::Read + io::Write {
     /// # Errors
     ///
     /// This function returns an error if the serial port couldn't be cloned.
-    fn try_clone(&self) -> Result<Box<SerialPort>>;
+    fn try_clone(&self) -> Result<Box<dyn SerialPort>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -520,7 +520,7 @@ pub struct SerialPortInfo {
 /// ```
 /// serialport::open("/dev/ttyUSB0");
 /// ```
-pub fn open<T: AsRef<OsStr> + ?Sized>(port: &T) -> Result<Box<SerialPort>> {
+pub fn open<T: AsRef<OsStr> + ?Sized>(port: &T) -> Result<Box<dyn SerialPort>> {
     // This is written with explicit returns because of:
     // https://github.com/rust-lang/rust/issues/38337
 
@@ -562,7 +562,7 @@ pub fn open<T: AsRef<OsStr> + ?Sized>(port: &T) -> Result<Box<SerialPort>> {
 pub fn open_with_settings<T: AsRef<OsStr> + ?Sized>(
     port: &T,
     settings: &SerialPortSettings,
-) -> Result<Box<SerialPort>> {
+) -> Result<Box<dyn SerialPort>> {
     // This is written with explicit returns because of:
     // https://github.com/rust-lang/rust/issues/38337
 
