@@ -699,13 +699,23 @@ impl PortDevice {
             //  BlackMagic UART port:   USB\VID_1D50&PID_6018&MI_02\6&A694CA9&0&0002
             //  FTDI Serial Adapter:    FTDIBUS\VID_0403+PID_6001+A702TB52A\0000
 
-            let re = Regex::new(concat!(
+            let usb_re = Regex::new(concat!(
                 r"VID_(?P<vid>[[:xdigit:]]{4})",
                 r"[&+]PID_(?P<pid>[[:xdigit:]]{4})",
                 r"([\\+](?P<serial>\w+))?"
             ))
             .unwrap();
-            if let Some(caps) = re.captures(&hardware_id) {
+
+			// For COM4 I've seen: ACPI\PNP0501\4
+			// https://docs.microsoft.com/en-us/windows-hardware/drivers/install/generic-identifiers
+			// http://web.archive.org/web/20181202201311/http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/devids.txt
+			// --Serial Devices--
+			// PNP0500         Standard PC COM port
+			// PNP0501         16550A-compatible COM port
+			// PNP0510         Generic IRDA-compatible device
+			let builtin_re = Regex::new(r"ACPI\\(PNP0500|PNP0501)\\([[:xdigit:]]+)").unwrap();
+
+            if let Some(caps) = usb_re.captures(&hardware_id) {
                 if let Ok(vid) = u16::from_str_radix(&caps[1], 16) {
                     if let Ok(pid) = u16::from_str_radix(&caps[2], 16) {
                         return SerialPortType::UsbPort(UsbPortInfo {
@@ -717,6 +727,13 @@ impl PortDevice {
                         });
                     }
                 }
+            }
+
+            if builtin_re.is_match(&hardware_id) {
+                // Technically we don't know if it's PCI device or not
+                // TODO: Look at the captures and identify which type of legacy
+                // port we have
+                return SerialPortType::PciPort
             }
         }
         SerialPortType::Unknown
