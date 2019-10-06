@@ -3,7 +3,8 @@ use regex::Regex;
 use std::ffi::{CStr, CString, OsStr};
 use std::os::windows::prelude::*;
 use std::time::Duration;
-use std::{io, mem, ptr};
+use std::{io, ptr};
+use std::mem::{self, MaybeUninit};
 
 use winapi::shared::guiddef::*;
 use winapi::shared::minwindef::*;
@@ -97,7 +98,7 @@ impl COMPort {
     }
 
     fn read_pin(&mut self, pin: DWORD) -> Result<bool> {
-        let mut status: DWORD = unsafe { mem::uninitialized() };
+        let mut status: DWORD = unsafe { MaybeUninit::uninit().assume_init() };
 
         match unsafe { GetCommModemStatus(self.handle, &mut status) } {
             0 => Err(super::error::last_os_error()),
@@ -116,7 +117,7 @@ impl COMPort {
     }
 
     fn get_dcb(&self) -> Result<DCB> {
-        let mut dcb: DCB = unsafe { mem::uninitialized() };
+        let mut dcb: DCB = unsafe { MaybeUninit::uninit().assume_init() };
 
         if unsafe { GetCommState(self.handle, &mut dcb) != 0 } {
             return Ok(dcb);
@@ -415,7 +416,7 @@ impl SerialPort for COMPort {
 
     fn bytes_to_read(&self) -> Result<u32> {
         let mut errors: DWORD = 0;
-        let mut comstat: COMSTAT = unsafe { mem::uninitialized() };
+        let mut comstat: COMSTAT = unsafe { MaybeUninit::uninit().assume_init() };
 
         if unsafe { ClearCommError(self.handle, &mut errors, &mut comstat) != 0 } {
             Ok(comstat.cbInQue)
@@ -426,7 +427,7 @@ impl SerialPort for COMPort {
 
     fn bytes_to_write(&self) -> Result<u32> {
         let mut errors: DWORD = 0;
-        let mut comstat: COMSTAT = unsafe { mem::uninitialized() };
+        let mut comstat: COMSTAT = unsafe { MaybeUninit::uninit().assume_init() };
 
         if unsafe { ClearCommError(self.handle, &mut errors, &mut comstat) != 0 } {
             Ok(comstat.cbOutQue)
@@ -453,7 +454,7 @@ impl SerialPort for COMPort {
         let process_handle: HANDLE = unsafe { GetCurrentProcess() };
         let mut cloned_handle: HANDLE;
         unsafe {
-            cloned_handle = mem::uninitialized();
+            cloned_handle = MaybeUninit::uninit().assume_init();
             DuplicateHandle(
                 process_handle,
                 self.handle,
